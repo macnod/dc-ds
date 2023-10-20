@@ -3,7 +3,7 @@
 
 A collection of functions for representing and rendering data structures.
 
-The _ds_ function allows you to create a nested data structure consisting of hash tables, lists, and arrays. Creating a very simple such structure in Common Lisp might look like this:
+The `ds` function allows you to create a nested data structure consisting of hash tables, lists, and arrays. Creating a very simple such structure in Common Lisp might look like this:
 
 #+begin_src lisp
   (let ((x (make-hash-table :test 'equal)))
