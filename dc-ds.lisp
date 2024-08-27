@@ -111,7 +111,7 @@ ds functions to access and manipulate the data."
           (:list (mapcar #'ds list))))))
 
 
-(defun ds-valid-keys (keys)
+(defun valid-keys (keys)
   "Check that the keys are strings, integers, or keywords."
   (loop for key in keys
         for key-type = (type-of key)
@@ -140,7 +140,7 @@ or like this:
                                 bogus-ds)
                  0)
             :weight)"
-  (ds-valid-keys keys)
+  (valid-keys keys)
   (if keys
       (case (ds-type ds)
         (hash-table
@@ -243,7 +243,7 @@ a list of keys or indexes, to VALUE."
                    location))
          (key (car keys)))
     (when *debug* (format t "ds=~a; keys=~a~%" (ds-list ds) keys))
-    (ds-valid-keys keys)
+    (valid-keys keys)
     (if (= (length keys) 1)
         (progn
           (when *debug* (format t "one key left"))
@@ -347,27 +347,24 @@ you want to easily traverse the JSON data structure."
 
 (defun ds-to-json (ds)
   "Converts the dc-utilities data structure DS into JSON."
-  (case (ds-type ds)
-    (hash-table
-     (format nil "{~{~a~^,~}}"
-             (loop for k being the hash-keys in ds using (hash-value v)
-                   for v-json = (ds-to-json v)
-                   for k-json = (if (symbolp k) (string-downcase (format nil "~a" k)) k)
-                   collect (format nil "\"~a\":~a" k-json v-json))))
-    (sequence
-     (format nil "[~{~a~^,~}]"
-             (if (consp ds)
-                 (loop with list = nil
-                       for a in ds do (push (ds-to-json a) list)
-                       finally (return (nreverse list)))
-                 (loop with list = nil
-                       for a across ds do (push (ds-to-json a) list)
-                       finally (return (nreverse list))))))
-    (otherwise
-     (let ((v (if (and ds (symbolp ds)) (string-downcase (format nil "~a" ds)) ds)))
-       (format nil
-               (cond
-                 ((floatp v) "~,9f")
-                 ((numberp v) "~a")
-                 ((null v) "null")
-                 (t "~s")) v)))))
+  (let ((yason:*symbol-key-encoder* #'yason:encode-symbol-as-lowercase)
+        (yason:*symbol-encoder* #'yason:encode-symbol-as-lowercase))
+    (with-output-to-string (json)
+      (yason:encode ds json))))
+
+(defun plistp (list)
+  (and (evenp (length list))
+       (loop for key in list by #'cddr always (keywordp key))))
+
+(defun ds-from-list (list)
+  (cond ((stringp list) list)
+        ((vectorp list) (map 'vector #'ds-from-list list))
+        ((null list) nil)
+        ((atom list) list)
+        ((plistp list) (loop with h = (make-hash-table)
+                             for key in list by #'cddr
+                             for value in (cdr list) by #'cddr
+                             for processed-value = (ds-from-list value)
+                             do (setf (gethash key h) processed-value)
+                             finally (return h)))
+        ((listp list) (map 'vector #'ds-from-list list))))         

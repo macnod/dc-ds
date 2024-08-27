@@ -7,7 +7,7 @@
 (defpackage :dc-ds-tests (:use :cl :prove :dc-ds))
 (in-package :dc-ds-tests)
 
-(plan 99)
+(plan 100)
 
 (is (ds nil) nil "ds with nil")
 (is (ds "") "" "ds with empty string")
@@ -266,7 +266,7 @@
   (is (ds-list ds-1)
       '(:map "a" 1 "b" 2 "c" (:list 1 2 3) "d" (:map "e" 4 "f" 5))
       "ds-from-json map with ints, a string, a nested list, a nested map")
-  (is (ds-to-json ds-1) json-1 "ds-to-json")
+  (is (ds-to-json ds-1) json-1 "roundtrip json-1")
   (is (ds-list ds-2)
       '(:map
         "a" 1
@@ -276,6 +276,7 @@
                         "f" (:list "one" "two" "three")))
         "d" "five")
       "ds-from-json with more deeply nested structures")
+  (is (ds-to-json ds-2) json-2 "rountrip json-2")
   (is (ds-get ds-2 "c" 2 "f" 1) "two"
       "ds-get against a deeply-nested ds-to-json structure"))
 

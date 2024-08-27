@@ -12,4 +12,6 @@
    ds-set
    ds-to-json
    ds-type
+   plistp
+   ds-from-list
    ))
