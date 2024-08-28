@@ -13,7 +13,6 @@
    to-json
    d-type
    list-to-json
-   plistp
    from-list
    d-equal
    ))

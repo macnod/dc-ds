@@ -353,10 +353,6 @@ you want to easily traverse the JSON data structure."
     (with-output-to-string (json)
       (yason:encode ds json))))
 
-(defun plistp (list)
-  (and (evenp (length list))
-       (loop for key in list by #'cddr always (keywordp key))))
-
 (defun from-list (list)
   (cond ((stringp list) list)
         ((vectorp list) (map 'vector #'from-list list))
@@ -372,6 +368,10 @@ you want to easily traverse the JSON data structure."
 
 (defun list-to-json (list)
   (to-json (from-list list)))
+
+(defun plistp (list)
+  (and (evenp (length list))
+       (loop for key in list by #'cddr always (keywordp key))))
 
 (defun d-equal (v1 v2)
   (equal (human (from-list v1))
