@@ -2,16 +2,18 @@
   (:use :cl :yason)
   (:export
    ds
-   ds-clone
-   ds-collection
-   ds-from-json
-   ds-get
-   ds-list
-   ds-merge
-   ds-paths
-   ds-set
-   ds-to-json
-   ds-type
+   clone
+   collection
+   from-json
+   pick
+   human
+   unify
+   paths
+   put
+   to-json
+   d-type
+   list-to-json
    plistp
-   ds-from-list
+   from-list
+   d-equal
    ))
