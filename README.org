@@ -3,7 +3,7 @@
 
 A collection of functions for representing and rendering data structures.
 
-The `ds` function allows you to create a nested data structure consisting of hash tables, lists, and arrays. Creating a very simple such structure in Common Lisp might look like this:
+The =ds= function allows you to create a nested data structure consisting of hash tables, lists, and arrays. Creating a very simple such structure in Common Lisp might look like this:
 
 #+begin_src lisp
   (let ((x (make-hash-table :test 'equal)))
@@ -17,7 +17,7 @@ The `ds` function allows you to create a nested data structure consisting of has
     x)
 #+end_src
 
-Creating the same data structure using the _ds_ function looks like this:
+Creating the same data structure using the =ds= function looks like this:
 
 #+begin_src lisp
   (ds '(:map "one" (:list 1 2 3)
@@ -25,7 +25,7 @@ Creating the same data structure using the _ds_ function looks like this:
              "three" (:list 7 8 (:map "z" 1 "y" 2 "x" 3))))
 #+end_src
 
-You'll need code to render a human-readable representation of the the data structure. Or, you can use ds-list, which will return the following for the example data structure that we created above (manually or using ds):
+You'll need code to render a human-readable representation of the the data structure. Or, you can use =ds-list=, which will return the following for the example data structure that we created above (manually or using =ds=):
 
 #+begin_src lisp
   (ds-list x)
@@ -38,14 +38,14 @@ You'll need code to render a human-readable representation of the the data struc
   ;; which is perfectly human-readable
 #+end_src
 
-Now, let's say you want to select the value of "x" in the above data structure. In Common Lisp, you might do something like this:
+Now, let's say you want to select the value associated with ="x"= in the above data structure. In Common Lisp, you might do something like this:
 
 #+begin_src lisp
   (gethash "x" (elt (gethash "three" *ds*) 2))
   ;; which gives us 3
 #+end_src
 
-Even for a super simple nested data structure, the path to an element of the structure looks unintuitive. Here's the way to access the element using the _ds-get_ function:
+Even for a super simple nested data structure, the path to an element of the structure looks unintuitive. Here's the way to access the element using the =ds-get= function:
 
 #+begin_src lisp
   (ds-get *ds* "three" 2 "x")
@@ -53,4 +53,4 @@ Even for a super simple nested data structure, the path to an element of the str
 
 I think everyone can agree that this is more succinct and intuitive.
 
-If you have a large, complex JSON file, for example, and you need to access elements of that serialized data structure, you can convert the whole thing into a _ds_ data structure with the function _ds-from-json_. Then, traversing the tree in Common Lisp is trivial.
+If you have a large, complex JSON file, for example, and you need to access elements of that serialized data structure, you can convert the whole thing into a =ds= data structure with the function =ds-from-json=. Then, traversing the tree in Common Lisp is trivial.
