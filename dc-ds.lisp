@@ -2,9 +2,9 @@
 
 (defparameter *debug* nil)
 
-(defun ds-collection-p (x)
-  "Return T if X is of type ds-collection. See the documentation for
- ds-collection."
+(defun collection-p (x)
+  "Return T if X is of type collection. See the documentation for
+ collection."
   (cond ((atom x) t)
         ((and (listp x)
               (not (zerop (length x)))
@@ -12,16 +12,16 @@
          (if (eq (car x) :map) (evenp (length (cdr x))) t))
         (t nil)))
 
-(deftype ds-collection ()
-  "A specifier for the type ds-collection. An item of type ds-collection
+(deftype collection ()
+  "A specifier for the type collection. An item of type collection
 is either an atom or a list. If it is a list, then the first element
 must be the type of the collection, and the type must be one of:
   :list
   :array
   :map
 
-The rest of the list must represent the ds-collection item's
-contents. If the ds-collection item is a map, then the list must have
+The rest of the list must represent the collection item's
+contents. If the collection item is a map, then the list must have
 an even number of elements (key/value pairs). Here are some examles of
 collections:
 
@@ -32,16 +32,16 @@ collections:
            (:map \"c\" 3 \"d\" 4)
            (:map \"e\" 5 \"f\" 6))
 
-A ds-collection item is just an easy way for humans to write a
+A collection item is just an easy way for humans to write a
 representation of a nested data structure. The ds command can
 turn that representation into an actual data structure that
-uses standard Common Lisp types. The ds-list command accepts
-a nested data structure and writes it out as a ds-collection
+uses standard Common Lisp types. The human command accepts
+a nested data structure and writes it out as a collection
 item."
-  `(satisfies ds-collection-p))
+  `(satisfies collection-p))
 
 
-(declaim (ftype (function (ds-collection) t) ds))
+(declaim (ftype (function (collection) t) ds))
 (defun ds (collection)
   "Create a nested data structure.  Each node in LIST-OR-ATOM can be an
 atom or a collection. A collection is a map (hash table), an array, or
@@ -111,7 +111,7 @@ ds functions to access and manipulate the data."
           (:list (mapcar #'ds list))))))
 
 
-(defun ds-valid-keys (keys)
+(defun valid-keys (keys)
   "Check that the keys are strings, integers, or keywords."
   (loop for key in keys
         for key-type = (type-of key)
@@ -121,7 +121,7 @@ ds functions to access and manipulate the data."
           do (error "Invalid key type. Must be a string, integer, or keyword.")))
 
 
-(defun ds-get (ds &rest keys)
+(defun pick (ds &rest keys)
   "Get a node (a leaf or a subtree) of DS, a dc-utilities data
 structure.  The parameters that follow ds, collected in KEYS, describe
 the path to the node.  For example, given the following data structure
@@ -132,62 +132,62 @@ in bogus-ds:
 
 You can get Tracy's weight like this:
 
-    (ds-get bogus-ds 1 :weight)
+    (pick bogus-ds 1 :weight)
 
 or like this:
 
-    (ds-get (elt (remove-if-not (lambda (x) (string= (ds-get x :name) \"Tracy\"))
+    (pick (elt (remove-if-not (lambda (x) (string= (pick x :name) \"Tracy\"))
                                 bogus-ds)
                  0)
             :weight)"
-  (ds-valid-keys keys)
+  (valid-keys keys)
   (if keys
-      (case (ds-type ds)
+      (case (d-type ds)
         (hash-table
          (multiple-value-bind (value exists)
              (gethash (car keys) ds)
            (if exists
                (if (= (length keys) 1)
                    (values value t)
-                   (values (apply #'ds-get (cons value (cdr keys))) t))
+                   (values (apply #'pick (cons value (cdr keys))) t))
                (values nil nil))))
         (sequence
          (if (< (car keys) (length ds))
              (if (= (length keys) 1)
                  (values (elt ds (car keys)) t)
-                 (values (apply #'ds-get (cons (elt ds (car keys))
-                                               (cdr keys)))
+                 (values (apply #'pick (cons (elt ds (car keys))
+                                             (cdr keys)))
                          t))
              (values nil nil)))
         (t (values nil nil)))
       (values ds t)))
 
-(defun ds-paths (ds &optional parent-keys)
+(defun paths (ds &optional parent-keys)
   "Given a nested data structure DS, this function returns the path
 to every leaf.  If you provide a key or list of keys in PARENT-KEYS,
 those keys are prepended to the path to every leaf."
   (when (and parent-keys (atom parent-keys))
     (setf parent-keys (list parent-keys)))
-  (case (ds-type ds)
+  (case (d-type ds)
     (hash-table
      (loop for k being the hash-keys in ds
            for new-parent-keys = (append parent-keys (list k))
            for child-ds = (gethash k ds)
-           for child-keys = (ds-paths child-ds new-parent-keys)
+           for child-keys = (paths child-ds new-parent-keys)
            append child-keys))
     (sequence
      (loop for i from 0 below (length ds)
            for new-parent-keys = (append parent-keys (list i))
            for child-ds = (elt ds i)
-           append (ds-paths child-ds new-parent-keys)))
+           append (paths child-ds new-parent-keys)))
     (t (list parent-keys))))
 
-(defun ds-type (ds)
+(defun d-type (ds)
   "Given a dc-eclectic data structure DS, this function returns the type
 of the data structure.  Valid return values include 'string,
 'sequence, 'hash-table, and some Common Lisp types. This function is
-used internally, by the ds-clone, ds-get, ds-paths, ds-list, ds-set,
-and ds-to-json functions."
+used internally, by the clone, pick, paths, human, put,
+and to-json functions."
   (let* ((a (type-of ds))
          (b (string-downcase (format nil "~a" a))))
     (cond ((ppcre:scan
@@ -234,7 +234,7 @@ can also be a hash table, in which case INDEX becomes the value's key."
       (make-list (1+ (second keys)))
       (make-hash-table :test #'equal)))
 
-(defun ds-set (ds location value)
+(defun put (ds location value)
   "In the given dc-utilities data structure DS, this function sets the
 value of the node at LOCATION-KEY-PATH, which is a key or an index, or
 a list of keys or indexes, to VALUE."
@@ -242,57 +242,58 @@ a list of keys or indexes, to VALUE."
                    (list location)
                    location))
          (key (car keys)))
-    (when *debug* (format t "ds=~a; keys=~a~%" (ds-list ds) keys))
-    (ds-valid-keys keys)
+    (when *debug* (format t "ds=~a; keys=~a~%" (human ds) keys))
+    (valid-keys keys)
     (if (= (length keys) 1)
         (progn
           (when *debug* (format t "one key left"))
           (set-collection-element ds key value))
         (multiple-value-bind (target-ds exists)
-            (ds-get ds key)
+            (pick ds key)
           (if exists
               (progn
                 (when *debug*
                   (format t "key ~a exists~%" key)
-                  (format t "target-ds=~a~%" (ds-list target-ds)))
+                  (format t "target-ds=~a~%" (human target-ds)))
                 (if (or (stringp target-ds) (numberp target-ds) (null target-ds))
                     (let ((sub-ds (if (integerp (second keys))
                                       (make-list (1+ (second keys)))
                                       (make-hash-table :test #'equal))))
                       (set-collection-element ds key sub-ds)
-                      (ds-set sub-ds (cdr keys) value))
-                    (ds-set target-ds (cdr keys) value)))
+                      (put sub-ds (cdr keys) value))
+                    (put target-ds (cdr keys) value)))
               (progn
                 (when *debug* (format t "key ~a doesn't exist~%" key))
-                (case (ds-type ds)
+                (case (d-type ds)
                   (hash-table
                    (setf (gethash key ds) (create-sub-ds keys))
-                   (ds-set ds keys value))
+                   (put ds keys value))
                   (sequence
                    (setf (elt ds key) (create-sub-ds keys))
-                   (ds-set ds keys value))
+                   (put ds keys value))
                   (otherwise
                    (setf ds (create-sub-ds keys))
-                   (ds-set ds keys value)))))))))
+                   (put ds keys value)))))))))
 
-(defun ds-merge (ds-base &rest ds-rest)
+;; Needs tests!
+(defun unify (ds-base &rest ds-rest)
   "Merges dc-utilities data structures, starting with DS-BASE and then
 progressing through the rest of the data structures, collected in
-ds-set, in order.  Values in later data structures override values in
+put, in order.  Values in later data structures override values in
 earlier data structures when the paths of the values coincide."
-  (loop with ds-main = (ds-clone ds-base)
+  (loop with ds-main = (clone ds-base)
         for ds in ds-rest do
-          (loop for key-path in (ds-paths ds)
-                do (ds-set ds-main key-path (apply #'ds-get (cons ds key-path))))
+          (loop for key-path in (paths ds)
+                do (put ds-main key-path (apply #'pick (cons ds key-path))))
         finally (return ds-main)))
 
-(defun ds-clone (ds)
+(defun clone (ds)
   "Clone the dc-utilities data structure DS."
-  (case (ds-type ds)
+  (case (d-type ds)
     (hash-table
      (loop with ds-new = (make-hash-table :test 'equal)
            for key being the hash-keys in ds
-           do (setf (gethash key ds-new) (ds-clone (gethash key ds)))
+           do (setf (gethash key ds-new) (clone (gethash key ds)))
            finally (return ds-new)))
     (string
      (copy-seq ds))
@@ -301,25 +302,25 @@ earlier data structures when the paths of the values coincide."
          (loop
            with ds-new = nil
            for i from 0 below (length ds)
-           do (push (ds-clone (elt ds i)) ds-new)
+           do (push (clone (elt ds i)) ds-new)
            finally (return (reverse ds-new)))
          (loop
            with l = (length ds)
            with ds-new = (make-array l)
            for i from 0 below l
-           do (setf (elt ds-new i) (ds-clone (elt ds i)))
+           do (setf (elt ds-new i) (clone (elt ds i)))
            finally (return ds-new))))
     (t ds)))
 
-(defun ds-list (ds)
+(defun human (ds)
   "Render the dc-utilities data structure DS in a human-readable way"
-  (case (ds-type ds)
+  (case (d-type ds)
     (hash-table
      (loop with list = (list :map)
            for k being the hash-keys in ds
            for v = (gethash k ds)
            do (push k list)
-              (push (ds-list v) list)
+              (push (human v) list)
            finally (return (nreverse list))))
     (string
      (map 'string 'identity (copy-seq ds)))
@@ -328,16 +329,16 @@ earlier data structures when the paths of the values coincide."
          (loop
            with list = (list :list)
            for a in ds
-           do (push (ds-list a) list)
+           do (push (human a) list)
            finally (return (nreverse list)))
          (loop
            with list = (list :array)
            for a across ds
-           do (push (ds-list a) list)
+           do (push (human a) list)
            finally (return (nreverse list)))))
     (otherwise ds)))
 
-(defun ds-from-json (json)
+(defun from-json (json)
   "Creates a dc-utilities data structure from JSON.  This is useful if
 you want to easily traverse the JSON data structure."
   (let* ((data (yason:parse json)))
@@ -345,29 +346,33 @@ you want to easily traverse the JSON data structure."
             (ds data)
             (ds (cons :array data))))))
 
-(defun ds-to-json (ds)
+(defun to-json (ds)
   "Converts the dc-utilities data structure DS into JSON."
-  (case (ds-type ds)
-    (hash-table
-     (format nil "{~{~a~^,~}}"
-             (loop for k being the hash-keys in ds using (hash-value v)
-                   for v-json = (ds-to-json v)
-                   for k-json = (if (symbolp k) (string-downcase (format nil "~a" k)) k)
-                   collect (format nil "\"~a\":~a" k-json v-json))))
-    (sequence
-     (format nil "[~{~a~^,~}]"
-             (if (consp ds)
-                 (loop with list = nil
-                       for a in ds do (push (ds-to-json a) list)
-                       finally (return (nreverse list)))
-                 (loop with list = nil
-                       for a across ds do (push (ds-to-json a) list)
-                       finally (return (nreverse list))))))
-    (otherwise
-     (let ((v (if (and ds (symbolp ds)) (string-downcase (format nil "~a" ds)) ds)))
-       (format nil
-               (cond
-                 ((floatp v) "~,9f")
-                 ((numberp v) "~a")
-                 ((null v) "null")
-                 (t "~s")) v)))))
+  (let ((yason:*symbol-key-encoder* #'yason:encode-symbol-as-lowercase)
+        (yason:*symbol-encoder* #'yason:encode-symbol-as-lowercase))
+    (with-output-to-string (json)
+      (yason:encode ds json))))
+
+(defun from-list (list)
+  (cond ((stringp list) list)
+        ((vectorp list) (map 'vector #'from-list list))
+        ((null list) nil)
+        ((atom list) list)
+        ((plistp list) (loop with h = (make-hash-table)
+                             for key in list by #'cddr
+                             for value in (cdr list) by #'cddr
+                             for processed-value = (from-list value)
+                             do (setf (gethash key h) processed-value)
+                             finally (return h)))
+        ((listp list) (map 'vector #'from-list list))))
+
+(defun list-to-json (list)
+  (to-json (from-list list)))
+
+(defun plistp (list)
+  (and (evenp (length list))
+       (loop for key in list by #'cddr always (keywordp key))))
+
+(defun d-equal (v1 v2)
+  (equal (human (from-list v1))
+         (human (from-list v2))))

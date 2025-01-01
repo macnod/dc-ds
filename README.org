@@ -28,7 +28,7 @@ Creating the same data structure using the =ds= function looks like this:
 You'll need code to render a human-readable representation of the the data structure. Or, you can use =ds-list=, which will return the following for the example data structure that we created above (manually or using =ds=):
 
 #+begin_src lisp
-  (ds-list x)
+  (human x)
   ;; which gives us the following
   ;;
   ;;     (:map "one" (:list 1 2 3)                          
@@ -48,7 +48,7 @@ Now, let's say you want to select the value associated with ="x"= in the above d
 Even for a super simple nested data structure, the path to an element of the structure looks unintuitive. Here's the way to access the element using the =ds-get= function:
 
 #+begin_src lisp
-  (ds-get *ds* "three" 2 "x")
+  (pick *ds* "three" 2 "x")
 #+end_src
 
 I think everyone can agree that this is more succinct and intuitive.
