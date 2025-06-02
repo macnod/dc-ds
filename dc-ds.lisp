@@ -313,12 +313,38 @@ earlier data structures when the paths of the values coincide."
     (t ds)))
 
 (defun human (ds)
-  "Render the dc-utilities data structure DS in a human-readable way"
+  "Render the dc-utilities data structure DS in a human-readable way. For
+hash-table portions of the data structure, sort the keys so that the
+human-readable version of the hash table can be compared to another.  When
+comparing two keys for sorting, the keys are sorted naturally if they are both
+of the same type, number, string, or keyword. Otherwise, number keys sort first,
+then keyword keys, then string keys. If none of the two keys are a number,
+keyword, or string, then the original order is retained."
   (case (d-type ds)
     (hash-table
      (loop with list = (list :map)
-           for k being the hash-keys in ds
-           for v = (gethash k ds)
+           for (k v) in (loop for key being the hash-keys in ds
+                          using (hash-value value)
+                          collect (list key value) into items
+                          finally 
+                          (return
+                            (sort
+                              items
+                              ;; If 2 keys are of the same type, sort them.
+                              ;; Otherwise, 
+                              (lambda (a b) 
+                                (cond 
+                                  ((and (numberp (car a)) (numberp (car b)))
+                                    (< (car a) (car b)))
+                                  ((and (stringp (car a)) (stringp (car b)))
+                                    (string< (car a)  (car b)))
+                                  ((and (keywordp (car a)) (keywordp (car b)))
+                                    (string< (car a) (car b)))
+                                  ((numberp (car a)) t)
+                                  ((keywordp (car a)) t)
+                                  ((numberp (car b)) nil)
+                                  ((keywordp (car b)) nil)
+                                  (t t))))))
            do (push k list)
               (push (human v) list)
            finally (return (nreverse list))))
@@ -358,7 +384,7 @@ you want to easily traverse the JSON data structure."
         ((vectorp list) (map 'vector #'from-list list))
         ((null list) nil)
         ((atom list) list)
-        ((plistp list) (loop with h = (make-hash-table)
+        ((plistp list) (loop with h = (make-hash-table :test 'equal)
                              for key in list by #'cddr
                              for value in (cdr list) by #'cddr
                              for processed-value = (from-list value)
