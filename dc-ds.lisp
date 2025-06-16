@@ -190,12 +190,12 @@ used internally, by the clone, pick, paths, human, put,
 and to-json functions."
   (let* ((a (type-of ds))
          (b (string-downcase (format nil "~a" a))))
-    (cond ((ppcre:scan
+    (cond ((re:scan
             "simple-array character|vector character"
             b)
            'string)
           ((or (string= b "cons")
-               (ppcre:scan "vector|array" b))
+               (re:scan "vector|array" b))
            'sequence)
           ((atom a) a)
           (t (car a)))))
@@ -367,17 +367,17 @@ keyword, or string, then the original order is retained."
 (defun from-json (json)
   "Creates a dc-utilities data structure from JSON.  This is useful if
 you want to easily traverse the JSON data structure."
-  (let* ((data (yason:parse json)))
+  (let* ((data (json:parse json)))
     (ds (if (hash-table-p data)
             (ds data)
             (ds (cons :array data))))))
 
 (defun to-json (ds)
   "Converts the dc-utilities data structure DS into JSON."
-  (let ((yason:*symbol-key-encoder* #'yason:encode-symbol-as-lowercase)
-        (yason:*symbol-encoder* #'yason:encode-symbol-as-lowercase))
+  (let ((json:*symbol-key-encoder* #'json:encode-symbol-as-lowercase)
+        (json:*symbol-encoder* #'json:encode-symbol-as-lowercase))
     (with-output-to-string (json)
-      (yason:encode ds json))))
+      (json:encode ds json))))
 
 (defun from-list (list)
   (cond ((stringp list) list)

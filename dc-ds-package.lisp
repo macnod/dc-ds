@@ -1,5 +1,8 @@
 (defpackage :dc-ds
-  (:use :cl :yason)
+  (:use :cl)
+  (:local-nicknames 
+    (:re :ppcre)
+    (:json :yason))
   (:export
    ds
    clone
