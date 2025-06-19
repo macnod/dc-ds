@@ -2,7 +2,10 @@
 ;;     make test
 
 (in-package :cl-user)
-(require :dc-ds)
+
+(pushnew (truename ".") asdf:*central-registry* :test 'equal)
+(asdf:load-system :dc-ds)
+
 (require :prove)
 (defpackage :dc-ds-tests (:use :cl :prove :dc-ds))
 (in-package :dc-ds-tests)
