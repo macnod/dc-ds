@@ -15,7 +15,7 @@ install-roswell:
 		git clone -b release $(ROSWELL_REPO) $(ROSWELL_SRC_DIR); \
 		cd $(ROSWELL_SRC_DIR); \
 		sh bootstrap; \
-		./configure --prefix=$(PREFIX); \
+		./configure --prefix=$(ROSWELL_PREFIX); \
 		make; \
 		make install; \
 		cd ..; \
