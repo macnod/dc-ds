@@ -1,21 +1,19 @@
-name: CI
+name: Run tests
 
 on:
   push:
-    branches:
-      - '*'
   pull_request:
-    branches:
-      - '*'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
+    inputs:
+      disable-cache:
+        description: 'Disable all caching'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
