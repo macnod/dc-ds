@@ -19,6 +19,8 @@ install-roswell:
 	touch $@
 
 install-dependencies:
+	ros install yason
+	ros install cl-ppcre
 	ros install fiveam
 
 test:
