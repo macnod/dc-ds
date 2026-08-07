@@ -374,8 +374,7 @@ you want to easily traverse the JSON data structure."
 
 (defun to-json (ds)
   "Converts the dc-utilities data structure DS into JSON."
-  (let ((json:*symbol-key-encoder* #'json:encode-symbol-as-lowercase)
-        (json:*symbol-encoder* #'json:encode-symbol-as-lowercase))
+  (let ((json:*symbol-key-encoder* #'json:encode-symbol-as-lowercase))
     (with-output-to-string (json)
       (json:encode ds json))))
 
