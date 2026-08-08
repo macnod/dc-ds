@@ -374,7 +374,8 @@ you want to easily traverse the JSON data structure."
 
 (defun to-json (ds)
   "Converts the dc-utilities data structure DS into JSON."
-  (let ((yason:*symbol-key-encoder* #'yason:encode-symbol-as-lowercase))
+  (let ((yason:*symbol-key-encoder* #'yason:encode-symbol-as-lowercase)
+         (yason:*symbol-encoder* #'yason:encode-symbol-as-lowercase))
     (with-output-to-string (json)
       (yason:encode ds json))))
 
